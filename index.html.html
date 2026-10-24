@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam Mastery | Mock Exam Simulator</title>
+<style>
+:root { --navy:#12213a; --blue:#2457c5; --light:#f3f6fb; --green:#138a55; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Arial, sans-serif; color:#1b2430; background:var(--light); }
+header { background:var(--navy); color:white; padding:22px 16px; text-align:center; }
+header h1 { margin:0 0 6px; letter-spacing:.5px; }
+header p { margin:0; opacity:.88; }
+.wrap { max-width:850px; margin:22px auto; padding:0 14px; }
+.card { background:white; border-radius:14px; padding:22px; box-shadow:0 5px 22px #10204012; margin-bottom:16px; }
+.row { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; color:#536176; font-weight:bold; }
+.progress { height:8px; background:#e4e9f2; border-radius:9px; overflow:hidden; margin:16px 0; }
+#bar { height:100%; width:0; background:var(--blue); transition:width .2s; }
+h2 { line-height:1.4; }
+.choice { display:block; width:100%; text-align:left; margin:10px 0; padding:14px; border:1px solid #d7deea; background:white; border-radius:10px; font-size:16px; cursor:pointer; }
+.choice:hover { border-color:var(--blue); background:#f5f8ff; }
+.choice.selected { border:2px solid var(--blue); background:#edf3ff; }
+button.primary, button.secondary { border:0; border-radius:9px; padding:12px 18px; font-size:15px; font-weight:bold; cursor:pointer; }
+button.primary { background:var(--blue); color:white; }
+button.secondary { background:#e9edf5; color:var(--navy); }
+.controls { display:flex; justify-content:space-between; gap:10px; margin-top:18px; }
+.adbox { border:2px dashed #c7cfdd; border-radius:10px; color:#69778b; text-align:center; padding:20px 12px; margin:16px 0; background:#fafbfd; font-size:13px; }
+.small { font-size:13px; color:#657187; line-height:1.5; }
+.hidden { display:none; }
+#resultScore { font-size:42px; font-weight:800; color:var(--blue); }
+.review { border-top:1px solid #e5e9f1; padding:14px 0; line-height:1.5; }
+.correct { color:var(--green); font-weight:bold; }
+.wrong { color:#b42318; font-weight:bold; }
+@media(max-width:520px) { .card { padding:16px; } .controls button { flex:1; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>EXAM MASTERY</h1>
+  <p>Prepare • Practice • Master</p>
+</header>
+<main class="wrap">
+  <div class="adbox">ADVERTISEMENT SPACE — Add approved ad code here only after your site is eligible and approved.</div>
+  <section id="intro" class="card">
+    <h2>Mock Exam Simulator</h2>
+    <p>Try this short demo exam. Select an answer for each question, then submit to see your score and explanations.</p>
+    <p><strong>Demo:</strong> 5 sample questions · 5-minute timer</p>
+    <button class="primary" id="startBtn">START EXAM</button>
+    <p class="small">Practice material only; this is not an official government examination.</p>
+  </section>
+  <section id="exam" class="card hidden">
+    <div class="row"><span id="counter">Question 1 of 5</span><span id="timer">05:00</span></div>
+    <div class="progress"><div id="bar"></div></div>
+    <h2 id="question"></h2>
+    <div id="choices"></div>
+    <div class="controls">
+      <button class="secondary" id="prevBtn">← Previous</button>
+      <button class="primary" id="nextBtn">Next →</button>
+      <button class="primary hidden" id="submitBtn">Submit exam</button>
+    </div>
+  </section>
+  <section id="results" class="card hidden">
+    <h2>Exam Results</h2>
+    <div id="resultScore"></div>
+    <p id="resultText"></p>
+    <div class="adbox">ADVERTISEMENT SPACE</div>
+    <h3>Answer Review</h3>
+    <div id="review"></div>
+    <button class="primary" id="retryBtn">Try Again</button>
+  </section>
+  <p class="small">Prototype note: answers and questions are stored in this page's code. For a paid exam or private student accounts, add secure backend/access controls before selling access.</p>
+</main>
+<script>
+const questions = [
+ {q:"What is 25% of 240?", choices:["40","50","60","80"], answer:2, why:"25% is one-fourth. 240 ÷ 4 = 60."},
+ {q:"Choose the word closest in meaning to “abundant.”", choices:["Scarce","Plentiful","Tiny","Empty"], answer:1, why:"Abundant means available in large quantities; plentiful is the closest synonym."},
+ {q:"All roses are flowers. Some flowers fade quickly. Which conclusion is definitely true?", choices:["All roses fade quickly.","Some roses fade quickly.","All roses are flowers.","No flowers are roses."], answer:2, why:"Only the statement that all roses are flowers is guaranteed by the premise."},
+ {q:"A vehicle travels 150 kilometers in 3 hours. What is its average speed?", choices:["30 km/h","45 km/h","50 km/h","60 km/h"], answer:2, why:"Average speed = distance ÷ time = 150 ÷ 3 = 50 km/h."},
+ {q:"Which branch of government primarily interprets laws in the Philippines?", choices:["Executive","Legislative","Judicial","Local government"], answer:2, why:"The Judiciary interprets laws and resolves cases under the Constitution and laws."}
+];
+let current=0, answers=Array(questions.length).fill(null), seconds=300, interval=null, finished=false;
+const $=id=>document.getElementById(id);
+function showQuestion(){
+ const item=questions[current];
+ $("counter").textContent=`Question ${current+1} of ${questions.length}`;
+ $("bar").style.width=`${((current+1)/questions.length)*100}%`;
+ $("question").textContent=item.q;
+ $("choices").innerHTML="";
+ item.choices.forEach((choice,i)=>{
+   const b=document.createElement("button"); b.className="choice"+(answers[current]===i?" selected":"");
+   b.textContent=String.fromCharCode(65+i)+". "+choice;
+   b.onclick=()=>{answers[current]=i;showQuestion();};
+   $("choices").appendChild(b);
+ });
+ $("prevBtn").disabled=current===0;
+ $("nextBtn").classList.toggle("hidden",current===questions.length-1);
+ $("submitBtn").classList.toggle("hidden",current!==questions.length-1);
+}
+function showTime(){
+ const m=String(Math.floor(seconds/60)).padStart(2,"0"), s=String(seconds%60).padStart(2,"0");
+ $("timer").textContent=`${m}:${s}`;
+ if(seconds<=60) $("timer").style.color="#b42318";
+}
+function start(){
+ current=0; answers=Array(questions.length).fill(null); seconds=300; finished=false;
+ $("intro").classList.add("hidden"); $("results").classList.add("hidden"); $("exam").classList.remove("hidden");
+ showQuestion(); showTime(); clearInterval(interval);
+ interval=setInterval(()=>{seconds--;showTime();if(seconds<=0)submit();},1000);
+}
+function submit(){
+ if(finished)return; finished=true;clearInterval(interval);
+ const score=questions.reduce((n,q,i)=>n+(answers[i]===q.answer?1:0),0);
+ $("exam").classList.add("hidden");$("results").classList.remove("hidden");
+ $("resultScore").textContent=`${score}/${questions.length}`;
+ $("resultText").textContent=`You scored ${Math.round(score/questions.length*100)}%. Review the explanations below to learn from any mistakes.`;
+ $("review").innerHTML="";
+ questions.forEach((q,i)=>{
+  const div=document.createElement("div");div.className="review";
+  const chosen=answers[i]===null?"No answer":String.fromCharCode(65+answers[i])+". "+q.choices[answers[i]];
+  div.innerHTML=`<strong>${i+1}. ${q.q}</strong><br><span class="${answers[i]===q.answer?'correct':'wrong'}">${answers[i]===q.answer?'Correct':'Incorrect'} — Your answer: ${chosen}</span><br><strong>Correct answer:</strong> ${String.fromCharCode(65+q.answer)}. ${q.choices[q.answer]}<br><span class="small">${q.why}</span>`;
+  $("review").appendChild(div);
+ });
+}
+$("startBtn").onclick=start;
+$("prevBtn").onclick=()=>{if(current>0){current--;showQuestion();}};
+$("nextBtn").onclick=()=>{if(current<questions.length-1){current++;showQuestion();}};
+$("submitBtn").onclick=()=>{if(confirm("Submit your exam now?"))submit();};
+$("retryBtn").onclick=()=>{$("results").classList.add("hidden");$("intro").classList.remove("hidden");};
+</script>
+</body>
+</html>
